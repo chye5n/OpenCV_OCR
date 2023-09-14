@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.5.0/font/bootstrap-icons.css"
+    />
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='css/bootstrap.css') }}"
+    />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
+
+    <title>Document recognition</title>
+
+    <style>
+      form {
+        margin: 30px auto;
+        width: 90% !important;
+      }
+
+      form h2 {
+        margin: 20px 0px 30px 0px;
+      }
+
+      form input,
+      label {
+        margin: 5px 0px;
+      }
+
+      .container {
+        display: flex;
+      }
+
+      .info {
+        display: flex;
+      }
+      .box-left {
+        flex: 5;
+      }
+      .box-center {
+        flex: 1;
+        text-align : center;
+
+        padding : 180px 0;
+      }
+      .box-right {
+        
+        flex: 5;
+      }
+      .h40 { 
+        height : 40%;
+        margin: 5px;
+        background-color: lightgrey;
+      }
+      .h20 { height : 20%; }
+    </style>
+</head>
+  <body>
+  <form class="container" method="post">
+        <h1><i class="bi bi-file-earmark-text"></i> Document recognition</h2>
+  </form>
+    <hr width=90% color=#ccc noshade />
+    <br>
+    <div class='container'>
+    <div class='box-left' style="text-align:center;">
+        <form id="imageForm" method="POST" action="/upload_image" enctype="multipart/form-data" accept-charset="UTF-8">
+      <input type="file" name="image_upload" id="image_upload">
+      <input type="submit" class="btn btn-primary" style="background-color: black; min-width: 150px; height: 50px;" value="이미지 업로드" name="image_submit">
+  </form>
+    </div>
+    <div class='box-right' style="text-align:right;">
+      <form method="POST" action="/select_roi">
+        <input type="submit" class="btn btn-primary" style="background-color: black; min-width: 150px; height: 50px;" value="영역 선택">
+      </form>
+    </div>
+  </div>
+    
+  <div class='container'>
+    <div class='box-left' style="text-align:center; border:2px solid lightgrey;">
+        <br><br>
+        <img src="{{ image_url }}" alt="선택한 이미지">
+    </div>
+    <div class='box-center' style="text-align:center;">
+      <button type="button" class="btn btn-primary" name="process_image_endpoint" id="process_image_endpoint" onclick="processImageAndRedirect()"><i class="fas fa-arrow-right fa-3x"></i></button>
+    </div>
+    <div class='box-right'>
+      <div class="h40">{{result["new_str"]}}</div>
+      <div class="h20" style="text-align:center;">
+        <br>
+        <label type="submit" class="btn btn-primary" style="background-color: black; min-width: 80px; height: 40px;"name="trans"><i class="fas fa-arrow-down"></i>  번역  <i class="fas fa-arrow-down"></i></label>
+      </div>
+      <div class="h40">{{result["trans"]}}</div>
+    </div>
+  </div>
+
+  <script>
+    function processImageAndRedirect() {
+      // 이미지 처리를 위한 AJAX 요청을 보냄
+      fetch('/process_image_endpoint', {
+        method: 'POST',
+        body: new FormData(document.querySelector('#imageForm')),
+      })
+      .then(response => {
+        if (!response.ok) {
+          throw new Error('Network response was not ok');
+        }
+        return response.json();
+      })
+      .then(data => {
+        // 처리 결과를 받아온 후 원하는 요소에 표시
+        console.log(data);
+    
+        // new_str과 trans 결과를 업데이트
+        document.querySelector('.h40:first-child').innerHTML = data.new_str;
+        document.querySelector('.h40:last-child').innerHTML = data.trans;
+      })
+      .catch(error => {
+        console.error('Error:', error);
+      });
+    }
+  </script>
+
+</body>
+</html>
