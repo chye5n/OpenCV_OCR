@@ -27,10 +27,7 @@ def process_image(image_path):
     path = "C:/Users/zkdlz/OneDrive/Desktop/OpenCV/project_copy5"
     image = cv2.imread(path + image_path)
 
-    # 이미지를 그레이스케일로 변환
-    #gray_image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
-
-    # 그레이스케일 이미지를 문자열로 변환
+    # 이미지를 문자열로 변환
     text = pytesseract.image_to_string(image, lang="eng+kor")
     new_str = text.replace("\n", " ")
 
@@ -180,7 +177,7 @@ def process_image_endpoint():
         trans = ""
 
     result = {"new_str": new_str, "trans": trans}
-    return jsonify(result)  # JSON 형식으로 응답 반환s
+    return jsonify(result)  # JSON 형식으로 응답 반환
 
 
 @app.route("/select_roi", methods=["POST"])
@@ -189,17 +186,17 @@ def select_roi():
 
     h, w = None, None
 
-    # 업로드한 이미지를 읽어옵니다 (파일 경로를 수정할 수 있습니다).
+    # 업로드한 이미지를 읽기 (파일 경로를 수정).
     image_path = "C:/Users/zkdlz/OneDrive/Desktop/OpenCV/" + img_url
     src = cv2.imread(image_path)
     print(img_url)
     if src is None:
-        return "이미지를 열 수 없습니다!"
+        return "이미지를 열 수 없습니다"
 
     # ROI와 관련된 변수 초기화
     h, w = src.shape[:2]
     dw = round(300 * 297 / 210)
-    dh = 300  # A4 용지 크기: 210x297cm
+    dh = 300
 
     # 모서리 점들의 좌표, 드래그 상태 여부
     srcQuad = np.array(
@@ -208,7 +205,7 @@ def select_roi():
     dstQuad = np.array([[0, 0], [0, dh - 1], [dw - 1, dh - 1], [dw - 1, 0]], np.float32)
     dragSrc = [False, False, False, False]
     ptOld = (0, 0)
-    # ROIs가 있는 디스플레이 이미지를 생성합니다.
+    # ROI가 있는 디스플레이 이미지를 생성
     disp = drawROI(src, srcQuad)
 
     cv2.imshow("img", disp)
@@ -222,18 +219,18 @@ def select_roi():
             cv2.destroyWindow("img")
             break
 
-    # 투시 변환을 수행합니다.
+    # 투시 변환
     pers = cv2.getPerspectiveTransform(srcQuad, dstQuad)
     dst = cv2.warpPerspective(src, pers, (dw, dh), flags=cv2.INTER_CUBIC)
 
-    # 이미지 파일 이름을 동적으로 생성하여 저장합니다.
+    # 이미지 파일 이름을 바꾸어 저장
     transformed_image_filename = "transformed_image.jpg"  # 파일 이름을 원하는대로 수정하세요
     transformed_image_path = os.path.join(
         app.config["UPLOAD_FOLDER"], transformed_image_filename
     )
     cv2.imwrite(transformed_image_path, dst)
     global trans_url
-    # 변환된 이미지를 화면에 표시합니다.
+    # 변환된 이미지를 화면에 표시
     transformed_image_url = f"/static/uploads/{transformed_image_filename}"
     trans_url = transformed_image_url
     result = {"new_str": "", "trans": ""}
