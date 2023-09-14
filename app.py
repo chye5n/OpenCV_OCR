@@ -21,81 +21,59 @@ app.config["UPLOAD_FOLDER"] = UPLOAD_FOLDER
 if not os.path.exists(UPLOAD_FOLDER):
     os.makedirs(UPLOAD_FOLDER)
 
-
+# OCR인식 & 번역
 def process_image(image_path):
     # 이미지 파일을 OpenCV로 읽어옴
     path = "C:/Users/zkdlz/OneDrive/Desktop/OpenCV/project_copy5"
     image = cv2.imread(path + image_path)
 
-    # 이미지를 문자열로 변환
-    text = pytesseract.image_to_string(image, lang="eng+kor")
-    new_str = text.replace("\n", " ")
+    # 이미지를 그레이스케일로 변환
+    gray_image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
 
+    # 그레이스케일 이미지를 문자열로 변환(OCR 수행)
+    text = pytesseract.image_to_string(gray_image, lang="kor+eng") # 한국어와 영어로 OCR 수행 후 텍스트 반환
+    new_str = text.replace("\n", " ") # 반환된 텍스트에서 줄바꿈 문자 공백으로 대체
+
+		# 번역 언어 감지
     detected = translator.detect(new_str)
     src_lang = detected.lang
     dest_lang = None
     if src_lang == "en":
-        dest_lang = "ko"
+        dest_lang = "ko"  # 영어에서 한국어로 번역
     elif src_lang == "ko":
-        dest_lang = "en"
+        dest_lang = "en"  # 한국어에서 영어로 번역
 
     # 번역
     translated = translator.translate(new_str, dest_lang, src_lang)
-    trans = translated.text
-    return new_str, trans
+    trans = translated.text  # 번역된 텍스트를 저장
+    return new_str, trans    # 원본 텍스트와 번역된 텍스트를 반환
 
-
-# 이미지 선택 및 변환 관련 코드
+# 이미지에서 선택한 영역을 강조
 def drawROI(img, corners):
     cpy = img.copy()
 
-    c1 = (192, 192, 255)
+	# 원과 선을 그리기 위한 색상 정의
+    c1 = (192, 192, 255) 
     c2 = (128, 128, 255)
 
+	# 모든 모서리에 원
     for pt in corners:
         cv2.circle(cpy, tuple(pt.astype(int)), 25, c1, -1, cv2.LINE_AA)
-
-    cv2.line(
-        cpy,
-        tuple(corners[0].astype(int)),
-        tuple(corners[1].astype(int)),
-        c2,
-        2,
-        cv2.LINE_AA,
-    )
-    cv2.line(
-        cpy,
-        tuple(corners[1].astype(int)),
-        tuple(corners[2].astype(int)),
-        c2,
-        2,
-        cv2.LINE_AA,
-    )
-    cv2.line(
-        cpy,
-        tuple(corners[2].astype(int)),
-        tuple(corners[3].astype(int)),
-        c2,
-        2,
-        cv2.LINE_AA,
-    )
-    cv2.line(
-        cpy,
-        tuple(corners[3].astype(int)),
-        tuple(corners[0].astype(int)),
-        c2,
-        2,
-        cv2.LINE_AA,
-    )
+		
+	# 모서리를 잇는 선
+    cv2.line(cpy, tuple(corners[0].astype(int)), tuple(corners[1].astype(int)), c2, 2, cv2.LINE_AA)
+    cv2.line(cpy, tuple(corners[1].astype(int)), tuple(corners[2].astype(int)), c2, 2, cv2.LINE_AA)
+    cv2.line(cpy, tuple(corners[2].astype(int)), tuple(corners[3].astype(int)), c2, 2, cv2.LINE_AA)
+    cv2.line(cpy, tuple(corners[3].astype(int)), tuple(corners[0].astype(int)), c2, 2, cv2.LINE_AA)
 
     disp = cv2.addWeighted(img, 0.3, cpy, 0.7, 0)
-
     return disp
 
-
+# 마우스 이벤트
 def onMouse(event, x, y, flags, param):
     global srcQuad, dragSrc, ptOld, src
 
+	# 마우스 왼쪽 버튼이 눌렸을 때, 원을 움직일 수 있도록 허용
     if event == cv2.EVENT_LBUTTONDOWN:
         for i in range(4):
             if cv2.norm(srcQuad[i] - (x, y)) < 25:
@@ -103,10 +81,12 @@ def onMouse(event, x, y, flags, param):
                 ptOld = (x, y)
                 break
 
+	# 마우스 왼쪽 버튼을 놓았을 때, 원 움직임 중지
     if event == cv2.EVENT_LBUTTONUP:
         for i in range(4):
             dragSrc[i] = False
 
+	# 마우스 이동 시, 원 이동 및 이미지 업데이트
     if event == cv2.EVENT_MOUSEMOVE:
         for i in range(4):
             if dragSrc[i]:
@@ -115,6 +95,7 @@ def onMouse(event, x, y, flags, param):
 
                 srcQuad[i] += (dx, dy)
 
+				# 선택한 영역을 강조한 이미지 업데이트
                 cpy = drawROI(src, srcQuad)
                 cv2.imshow("img", cpy)
                 ptOld = (x, y)
