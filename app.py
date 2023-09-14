@@ -31,7 +31,7 @@ def process_image(image_path):
     #gray_image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
 
     # 그레이스케일 이미지를 문자열로 변환
-    text = pytesseract.image_to_string(image, lang="eng")
+    text = pytesseract.image_to_string(image, lang="eng+kor")
     new_str = text.replace("\n", " ")
 
     detected = translator.detect(new_str)
